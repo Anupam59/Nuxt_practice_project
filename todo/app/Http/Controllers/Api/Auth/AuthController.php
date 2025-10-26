@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\Auth\AuthResource;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\ValidationException;
+use App\Notifications\ResetPasswordNotificationCustom;
+
 
 class AuthController extends Controller
 {
@@ -70,5 +75,59 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'No authenticated user found.'
         ], 401);
+    }
+
+
+    // 🔹 FORGOT PASSWORD (Send Reset Link)
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['No user found with this email.']
+            ]);
+        }
+
+        // Token generate
+        $token = Password::createToken($user);
+
+        // Nuxt frontend URL
+        $frontendUrl = "http://localhost:3000/auth/reset?token={$token}&email={$user->email}";
+
+        // Send email
+        $user->notify(new ResetPasswordNotificationCustom($token, $frontendUrl));
+
+        return response()->json(['message' => 'Reset link sent successfully!']);
+    }
+
+
+    // 🔹 RESET PASSWORD (Set New Password)
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'token' => 'required',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->save();
+            }
+        );
+
+        if ($status == Password::PASSWORD_RESET) {
+            return response()->json(['message' => 'Password reset successfully!']);
+        } else {
+            return response()->json(['message' => 'Failed to reset password.'], 400);
+        }
     }
 }

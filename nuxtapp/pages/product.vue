@@ -34,9 +34,12 @@ function closeEditModal() {
 
 // View product details page
 function viewProduct(id) {
+  if(id){
   router.push({ path: `/product/${id}` }).catch(err => {
-    if (err.name !== 'NavigationDuplicated') console.error(err)
-  })
+      if (err.name !== 'NavigationDuplicated') console.error(err)
+    })
+  }
+  
 }
 </script>
 

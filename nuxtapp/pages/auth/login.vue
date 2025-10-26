@@ -5,13 +5,14 @@ import { useTokenStore } from '~/stores/token'
 
 const auth = useAuthStore()
 const token = useTokenStore()
+const router = useRouter()
 
 definePageMeta({
   middleware: ['guest'],
 })
 
 const form = reactive({
-  email: 'anupam@gmail.com',
+  email: 'anupam.talukdar.ac@gmail.com',
   password: '12345678',
 })
 
@@ -20,8 +21,6 @@ async function handleSubmit() {
 
   if (success) {
     alert('✅ Login Successful (Session Only)')
-    // Optional: redirect to dashboard
-    const router = useRouter()
     router.push('/dashboard')
   }
 }
@@ -47,11 +46,15 @@ async function handleSubmit() {
         </div>
 
         <p v-if="auth.errors.general" class="text-red-500 text-sm text-center">{{ auth.errors.general }}</p>
-
         <ButtonPrimary type="submit">Login</ButtonPrimary>
-
-        <ButtonPrimary @click.prevent="token.clearToken()">Remove Token</ButtonPrimary>
       </form>
+
+      <!-- 🔹 Forgot Password Link -->
+      <div class="mt-4 text-center">
+        <NuxtLink to="/auth/forgot" class="text-blue-500 hover:underline text-sm">
+          Forgot Password?
+        </NuxtLink>
+      </div>
 
       <div class="mt-4 text-sm text-center text-gray-600">
         <p>Token: {{ token.getToken }}</p>
